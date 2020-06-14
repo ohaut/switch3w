@@ -3,10 +3,13 @@
 
 WebServer *web_server;
 
-void handleSetLed() {
 
-    int ch , val;
-    char* str_ch = strdup(web_server->arg("ch").c_str());
+void setSwitchPin(int val);
+int getSwitchPin();
+
+void handleSetSw() {
+
+   int val;
     char* str_val = strdup(web_server->arg("val").c_str());
 
     if (!strlen(str_val)) { /* we asume no ch means all channels */
@@ -14,51 +17,24 @@ void handleSetLed() {
                                             "\"val parameter missing on URL\"}");
       goto _exit;
     }
-    ch = atoi(str_ch);
     val = atoi(str_val);
 
-    if (ch<0 || ch>=3) {
-      web_server->send(422, "application/json", "{\"result\": \"2\", \"message:\": "
-                                            "\"ch out of range (0..2)\"}");
-      goto _exit;
-    }
+   setSwitchPin(val);
 
-    if (val<0 || val>100) {
-      web_server->send(422,  "application/json", "{\"result\": \"3\", \"message:\": "
-                                            "\"val out of range (0..100)\"}");
-      goto _exit;
-    }
-
-    /* if a channel was provided we will use the channel, otherwise all */
-    if (strlen(str_ch)) {
-       dimmers.setDimmer(ch, ((float)val)/100.0);
-    }
-    else {
-       dimmers.setAll(((float)val)/100.0);
-    }
-   // web_server->send(200, "application/json", "{\"result\": \"0\", \"message:\": "
-   //                                       "\"channel set correctly\"}");
-   handleGetLeds();
+   handleGetSw();
  _exit:
-    free (str_ch);
     free (str_val);
 }
 
-void handleGetLeds() {
+void handleGetSw() {
   char result[128];
-  sprintf(result, "{\"ch0\": \"%d\","
-                   "\"ch1\": \"%d\","
-                   "\"ch2\": \"%d\","
-                   "\"all\": \"%d\"}",
-                   (int)(dimmers.getDimmer(0)*100.0),
-                   (int)(dimmers.getDimmer(1)*100.0),
-                   (int)(dimmers.getDimmer(2)*100.0),
-                   (int)(dimmers.getAll()*100.0));
+  sprintf(result, "{\"val\": \"%d\"}",
+                   (int) getSwitchPin());
   web_server->send(200, "application/json", result);
 }
 
 void setupHTTPApi(WebServer *server) {
   web_server = server;
-  server->on("/setLed", HTTP_GET,  handleSetLed);
-  server->on("/getLeds", HTTP_GET, handleGetLeds);
+  server->on("/setSw", HTTP_GET,  handleSetSw);
+  server->on("/getSw", HTTP_GET, handleGetSw);
 }
